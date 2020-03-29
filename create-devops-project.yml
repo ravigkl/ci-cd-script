@@ -1,0 +1,29 @@
+# Option-1 : Createting docker image using command module 
+---
+- hosts: all
+  become: false
+  tasks:
+  - name: stop the running container
+    command: docker stop simple-devops-container
+    ignore_errors: yes
+
+  - name: remove the stopped container
+    command: docker rm simple-devops-container
+    ignore_errors: yes
+
+  - name: remove the docker images
+    command: docker rmi ravigkl/simple-devops-image:latest
+    ignore_errors: yes
+
+# image building is not required to be performed locally now, only pull the image from dockerhub
+# It is already been pushed onto the dockerhub
+#  - name: building docker image
+#    command: docker build -t simple-devops-image .
+#    args:
+#     chdir: /opt/docker
+
+  - name: pull the image from the dockerhub
+    command: docker pull ravigkl/simple-devops-image:latest
+
+  - name: create container
+    command: docker run -d --name simple-devops-container -p 8080:8080 ravigkl/simple-devops-image:latest
