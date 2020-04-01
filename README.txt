@@ -11,12 +11,19 @@ Jenkins Server deployment -
 	After login become the root user as $sudo su -
 	For installation, you should have root privileges
 	Check for java version, #java -version
-	By default the ec2 machine has Java 1.7.* installed, remove it by #yum remove java-1.7.*
+	By default the ec2 machine has Java 1.7.* installed, remove it by 
+	#yum remove java-1.7.*
+	
+	
 	Check angain java version, you get nothing #java -version
-	Now install java-1.8* as yum install java-1.8*
-	Now you can check java version as #java -version and will get java-1.8*
+	Now install java-1.8* as 
+	#yum install java-1.8*
+	
+	Now you can check java version as 
+	#java -version and will get java-1.8*
 	Now set the JAVA_HOME by searching the location of jre 
 	#find /usr/lib/jvm/java-1.8* | head -n 3
+	
 	JRE is located at /usr/lib/jvm/java-1.8.0-openjdk-1.8.0.242.b08-0.50.amzn1.x86_64
 	Set the JAVA_HOME into the home directory
 	#cd ~
@@ -26,6 +33,7 @@ Jenkins Server deployment -
 	:wq (save it)
 	#echo $JAVA_HOME - which will not give the correct path
 	logout and the login and check #echo $JAVA_HOME
+	
 	Now search for jenkins download into google
 	We have two options- LTS and Weekly
 	It is recommended as best practice to install LTS
@@ -75,6 +83,7 @@ Jenkins Server deployment -
 	Maven setup on jenkins server
 		Download the maven package into /opt/maven
 		mkdir /opt/maven
+		cd ~/opt/maven
 		wget fileurl
 		tar -xvzf apache-maven-*.bin.tar.gz
 	Setup M2_HOME and M2 paths into .bash_profile and use this to the path variable
@@ -100,6 +109,7 @@ Jenkins Server deployment -
 		Build
 			Root POM pom.xml
 			Goals and Options: clean install package
+			
 	Setup tomcat server - install new EC2 instance
 	use the same security group
 	ssh -i key ec2-user@3.89.200.190
@@ -107,7 +117,7 @@ Jenkins Server deployment -
 	download tomcat 8
 	wget http://apachemirror.wuchna.com/tomcat/tomcat-8/v8.5.53/bin/apache-tomcat-8.5.53.tar.gz
 	tar -xzvf apache-tomcat-8.5.53.tr.gz
-	change permission to executrabel to startup.sh and shutdown.sh
+	change permission to execute to startup.sh and shutdown.sh
 	chmod +x /opt/apache-tomcat-8.5.53/bin/startup.sh
 	chmod +x /opt/apache-tomcat-8.5.53/bin/shutdown.sh
 	startup.sh
@@ -139,7 +149,7 @@ Jenkins Server deployment -
 	 Choose the Jenkins and setup the deployment user credentials
 	 Apply and Save
 	 Run the Build
-	 check the url http://3.89.200.190:8080/webapp - Hola!!!
+	 Check the public ip :8080/webapps
 	 
 	 Set the Build trigger whenever there is code commit by Polling SCM as cronjob setting
 	 * * * * * (every minute, every hour, every day, every month, every week)
@@ -161,7 +171,7 @@ Jenkins Server deployment -
 	 #docker images ls
 	 Now create a container for the tomcat
 	 #docker run --name tomcat-container -p 8080:8080 tomcat:latest
-	 Now check if tomcat is running on http://3.89.31.76:8080
+	 Now check if tomcat is running on public-ip:8080
 	 You will see 404 Not Found error
 	 Now stop the container, ctrl+c
 	 Remove the container #docker rm <container_id>
@@ -237,7 +247,7 @@ Jenkins Server deployment -
 	2. Tedious job to clean the inventory before deployment onto the target machine
 	Let's use Jenkis as build tool
 
-	Setup Ansible onto EC2 Linux AMI 2018, by create instance, name Ansible-Server, assign existing SG and Keypair
+Setup Ansible onto EC2 Linux AMI 2018, by create instance, name Ansible-Server, assign existing SG and Keypair
 	ssh -i key ec2-user@ip
 	#yum install python
 	#python --version
@@ -287,7 +297,7 @@ Jenkins Server deployment -
 	Now create hosts file in ansible server /etc/ansible/hosts
 	Into the file enter the ip of the machine where ansible will push the code for deployment, docker server
 	#sudo vi /etc/ansible/hosts
-	172.31.95.76
+	kubernernetes-master node ip
 	localhost
 	:wq
 	#ansible all -m ping
@@ -384,8 +394,221 @@ password
 the become value should be false
 Now add the docker server IP into the hosts file of the ansible server at /opt/docker
 		
+--------------------------------------------------------
+Deploy on Kubernetes
+		Setup Kubernetes environment
+		Use Kubectl command
+		Write deployment and service files
+		Create Ansible playbooks to deploy
+		Run a Jenkins job
+--------------------------------------------------------
+Setup Kubernetes Clusters on AWS
+	Goto AWS Console and Select EC2 -> Launch Instance
+		Select Ubuntu Server 18.04 LTS
+		select t2.micro ->Next ->Next ->Next
+		Add Tag
+		Name K8s-Management-Server
+		Next
+		Use Existing Security Group
+		Review and Launch
+		Launch
+		Use Exiting Key Pair
+		Accept the terms
+		Launch Instances
+		
+	Now login into the machine using ssh
+	$$ssh -i key ubuntu@ip
+	ubuntu@ip$sudo su -  (become root user)	
+	
+	Now download the AWS CLI Bundle
+	#curl https://s3.amazonaws.com/aws-cli/awscli-bundle.zip -o awscli-bundle.zip
+	Install unzip and python, by default it is not available
+	#apt install unzip python
+	Unzip AWS CLI Bundle
+	#unzip awscli-bundle.zip
+	
+	Now copy the file under /usr/local/bin/aws
+	#./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
+	Now you can get the aws version
+	#aws --version
+	
+	Now install kubectl
+	#curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+	#chmod +x ./kubectl
+	 #sudo mv ./kubectl /usr/local/bin/kubectl
+	Now you check kubectl
+	#kubectl
 	
 	
+	Now install kops
+	#curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+ 	#chmod +x kops-linux-amd64
+ 	#sudo mv kops-linux-amd64 /usr/local/bin/kops
+	Now you can check kops
+	#kops
 	
 	
+	Now Create an IAM user/role with Route53, EC2, IAM and S3 full access for EC2 instance
+		Select IAM service -> Create Role> Select EC2 > Role Name : k8s-role, add s3full, ec2full, route53full, iamfull 
+		Select K8 Management Server -> Instance Settings > Attach/Replace IAM Role > select created IAM role from dropdown list and apply
+		
+	Now configure aws
+		#aws configure
+		Select Default Zone us-east-1
+		(You can get the zone name next to your login at the right top)
 	
+	Now create Private Route53 hosted zone 
+		Select Route 53 service
+		Select DNS Management ->get started now -> create hosted zone
+		devopstest.net
+		us-east-1
+		And Availability Zone you can find, at the instance page (us-east-1c) 
+		
+	
+	Now create s3 bucket
+		From commandline run the following command
+		#aws s3 mb s3://demo.k8s.devopstest.net
+		You can go and check it is created into S3
+	
+	Now expose environment variable for Kops
+	#export KOPS_STATE_STORE=s3://demo.k8s.devopstest.net
+		
+	Now create key-pair to login to the cluster (generate the key-pair cluster )
+		#ssh-keygen
+		#cd .ssh
+	Now create kubernetes cluster definition on s3 bucket
+	#kops create cluster --cloud=aws --zones=us-east-1a --name=demo.k8s.devopstest.net --dns-zone=devopstest.net --dns private 
+		
+	Output:
+	Cluster configuration has been created.
+
+	Suggestions:
+	 * list clusters with: kops get cluster
+	 * edit this cluster with: kops edit cluster demo.k8s.devopstest.net
+	 * edit your node instance group: kops edit ig --name=demo.k8s.devopstest.net nodes
+	 * edit your master instance group: kops edit ig --name=demo.k8s.devopstest.net master-ap-northeast-2b
+
+	Finally configure your cluster with: kops update cluster --name demo.k8s.devopstest.net --yes
+	
+	Now create kubernetes cluster
+	#kops update cluster demo.k8s.devopstest.net --yes
+	
+	Output of the above command
+	Cluster is starting.  It should be ready in a few minutes.
+
+	Suggestions:
+	 * validate cluster: kops validate cluster
+	 * list nodes: kubectl get nodes --show-labels
+	 * ssh to the master: ssh -i ~/.ssh/id_rsa admin@api.demo.k8s.devopstest.net
+	 * the admin user is specific to Debian. If not using Debian please use the appropriate user based on your OS.
+	 * read about installing addons at: https://github.com/kubernetes/kops/blob/master/docs/operations/addons.md.
+	
+	
+ Now validate the cluster (repeat the command till you see it ready)
+ 	   # kops validate cluster
+	   
+Now login to master node
+		#ssh -i ~/.ssh/id_rsa admin@api.demo.k8s.devopstest.net  from the K8s-Master-Server and the sudo su -
+		check the private ip from the instance of the master-node
+		#exit
+		#kubectl get nodes
+In case you want to delete the kubernetes cluster
+	Delete cluster
+		# kops delete cluster demo.k8s.devopstest.net --yes
+			
+Now login to the kubernetes master node server
+	#ssh -i ~/.ssh/id_rsa admin@api.demo.k8s.devopstest.net
+	#sudo su -  [login as root user]
+	#kubectl get nodes [one master and two nodes]
+	#kubectl get pods [get pods if created]
+	#kubectl get deploy [get deployment if created]
+	
+Deploying Nginx pods on Kubernetes
+	Deploying Nginx Container
+
+	#kubectl run sample-nginx --image=nginx --replicas=2 --port=80 [run two pods of nginx by pulling image from docker and name it as simple-nginx]
+# kubectl run simple-devops-project --image=ravigkl/simple-devops-image --replicas=2 --port=8080 [ in case of ravigkl/simple-devops-image from docker hub]
+	Execute the commands 
+	#kubectl get pods
+	#kubectl get deployments
+	
+Expose the deployment as service to access the application publically. This will create an ELB in front of those 2 containers and allow us to publicly access them.
+
+	#kubectl expose deployment sample-nginx --port=80 --type=LoadBalancer
+# kubectl expose deployment simple-devops-project --port=8080 --type=LoadBalancer
+	#kubectl get services -o wide	
+		
+Now create the deploy and service yml files to deploy the image and expose it to access.
+	#kubectl apply -f devops-test-deploy.yml
+	#kubectl apply -f devops-test-service.yml
+
+Integrate Kubernetes with Ansible
+	Login to ansible server and copy public key onto kubernetes cluseter master account
+	$ssh -i key ec2-user@public-ip
+	then sudo su - ansibleadmin
+	then cd .ssh
+	cat id_rsa.pub
+	copy it to the end of the K8s-Management-Server into ~/.ssh/authorized_keys
+	It is added under root account of the K8s-Management-Server, so you can use it to login from the ansible server to to master-node using the public ip of master node
+	Note: the user is admin
+	from Ansible server as ansibleadmin user
+	$ssh -i ~/.ssh/id_rsa  admin@public_ip_of_master_node - it will login to master node as admin and you can change it to root as 
+	$sudo su - 
+	#cat >>authorized_keys [append by copying the public key of the ansible server to this file]
+	
+	Now into ansible server, create a folder kubernetes under /opt
+	$sudo mkdir kubernetes
+	$cd kubernetes
+	$ls [nothing is there]
+	Create hosts file
+	$sudo vi hosts
+	[ansible-server]
+	localhost
+	
+	[kubernetes]
+	master node public ip
+	
+	save it :wq
+	Now create the deployment and service files into kubernetes folder where hosts file is
+	$sudo vi deployment and service files
+	
+	By deleting the deployment, it deletes deployment and pods but the service attached to it
+	
+	Delete all the service and deployment onto kubernetes master node
+	Now fire the ansible-playbook script on the ansible server
+	
+	
+	Now let's execute the Kubernetes deployment and service file into ansible-playbook from Jenkins Server
+	Before this process, just delete the previously deployed deployment and service
+	Goto the Jenkins Server, Create New Item Deploy_On_Kubernetes_using_Ansible free style project without source but only post build action
+	Send build artifacts over SSH Select Ansible_Server, and enter the executable playbook command along with hosts and file location
+	ansible-playbook -i /opt/kubernetes/hosts /opt/kubernetes/kubernetes-devops-test-deploy.yml;
+	ansible-playbook -i /opt/kubernetes/hosts /opt/kubernetes/kubernetes-devops-test-service.yml;
+	
+	Now you can build the image of the war from the Github source code for the Kubernetes CI
+	Move the Dockerfile, create-devops-image from /opt/docker to /opt/kubernetes
+	
+	Change the ownership of these files to ansibleadmin instead of root
+	$ls -ld /opt/kubernetes
+	$sudo chown -R ansibleadmin:ansibleadmin /opt/kubernetes
+	Also change the hosts from all to ansible-server
+	
+	Now CI/CD Pipeline using GitHub, Jenkins, Ansible, DockerHub, Kubernetes
+	Edit the CI Job and Choose Build Other Project from the Post Build Action and select the CD job and trigger it when CI build is stable
+	
+	Kubernetes supports rolling deployment of the images using the version control of the images
+	And creates new container with the new image
+	
+
+	Update hosts file with new group called kubernetes and add kubernetes master in that.
+
+	Create ansible playbooks to create deployment and services
+
+	Check for pods, deployments and services on kubernetes master
+
+	kubectl get pods -o wide 
+	kubectl get deploy -o wide
+	kubectl get service -o wide
+	Access application using service IP
+
+	wget <kubernetes-Master-IP>:31200
